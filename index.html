@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DravenCool Portal</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: Arial, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh; 
+            color: white;
+        }
+        
+        #lock { 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.9);
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            z-index: 1000;
+        }
+        .lock-box { 
+            background: white; 
+            color: black; 
+            padding: 40px; 
+            border-radius: 10px; 
+            text-align: center; 
+        }
+        input { 
+            padding: 10px; 
+            margin: 10px 0; 
+            width: 200px; 
+            font-size: 16px;
+        }
+        button { 
+            padding: 10px 20px; 
+            background: #667eea; 
+            color: white; 
+            border: none; 
+            cursor: pointer; 
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover { background: #764ba2; }
+        
+        #main { display: none; padding: 20px; }
+        h1 { text-align: center; margin-bottom: 20px; }
+        
+        .stats { 
+            display: flex; 
+            justify-content: center; 
+            gap: 20px; 
+            margin-bottom: 30px; 
+            flex-wrap: wrap;
+        }
+        .stat { 
+            background: rgba(255,255,255,0.2); 
+            padding: 15px; 
+            border-radius: 10px; 
+            text-align: center;
+            min-width: 100px;
+        }
+        .stat-num { font-size: 24px; font-weight: bold; color: #ffd700; }
+        
+        .games { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); 
+            gap: 15px; 
+            max-width: 1400px; 
+            margin: 0 auto;
+        }
+        .game { 
+            background: rgba(255,255,255,0.1); 
+            padding: 15px; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            text-align: center;
+            transition: transform 0.2s;
+            border: 2px solid transparent;
+        }
+        .game:hover { 
+            transform: scale(1.05); 
+            background: rgba(255,255,255,0.2);
+            border-color: #ffd700;
+        }
+        .game-icon { font-size: 40px; margin-bottom: 10px; }
+        .game-title { font-weight: bold; font-size: 14px; }
+        .game-source { font-size: 12px; opacity: 0.8; margin-top: 5px; }
+        .broken { border-color: #ff4757 !important; opacity: 0.6; }
+        
+        #player { 
+            display: none; 
+            position: fixed; 
+            top: 0; left: 0; 
+            width: 100%; height: 100%; 
+            background: black; 
+            z-index: 999;
+            padding: 10px;
+        }
+        .player-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #333;
+        }
+        iframe { 
+            width: 100%; 
+            height: calc(100% - 60px); 
+            border: none; 
+            background: #111;
+        }
+        .error-msg { 
+            display: none; 
+            text-align: center; 
+            padding: 50px; 
+            color: #ff6b6b;
+        }
+        
+        .filter { text-align: center; margin-bottom: 20px; }
+        .filter button { background: rgba(255,255,255,0.2); margin: 0 5px; }
+        .filter button.active { background: #ffd700; color: black; }
+        
+        .load-more { 
+            text-align: center; 
+            margin-top: 30px; 
+            padding: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="lock">
+        <div class="lock-box">
+            <h2>🔒 DravenCool Portal</h2>
+            <p>Enter password to continue</p>
+            <input type="password" id="pwd" placeholder="Password" onkeypress="if(event.key==='Enter')checkPwd()">
+            <br>
+            <button onclick="checkPwd()">Enter</button>
+            <p id="err" style="color:red;display:none;margin-top:10px;">Wrong password!</p>
+        </div>
+    </div>
+
+    <div id="main">
+        <h1>🎮 DravenCool Ultra Portal</h1>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-num" id="visits">0</div>
+                <div>Visits</div>
+            </div>
+            <div class="stat">
+                <div class="stat-num" id="online">1</div>
+                <div>Online</div>
+            </div>
+            <div class="stat">
+                <div class="stat-num" id="total">0</div>
+                <div>Games</div>
+            </div>
+        </div>
+
+        <div class="filter">
+            <button class="active" onclick="filter('all')">All</button>
+            <button onclick="filter('working')">Working</button>
+            <button onclick="filter('1kh0')">1kh0</button>
+            <button onclick="filter('emu')">Emulators</button>
+            <button onclick="filter('coolmath')">Cool Math</button>
+            <button onclick="filter('io')">.io</button>
+        </div>
+
+        <div class="games" id="gameList"></div>
+    </div>
+
+    <div id="player">
+        <div class="player-header">
+            <h3 id="pTitle">Game</h3>
+            <div>
+                <span id="load" style="margin-right:20px;">Loading...</span>
+                <button onclick="closeGame()" style="background:#ff4757;">✕ Close</button>
+            </div>
+        </div>
+        <iframe id="frame"></iframe>
+        <div id="errFrame" class="error-msg">
+            <h2>⚠️ Game Blocked or Broken</h2>
+            <p>This game doesn't work on your network.</p>
+            <button onclick="closeGame()">Back to Games</button>
+        </div>
+    </div>
+
+    <script>
+        // 120+ Games - Mix of working and known sources
+        const games = [
+            // 1kh0 Games (Working)
+            {t:"2048", s:"1kh0", c:"puzzle", u:"https://1kh0.github.io/projects/2048/index.html", w:true},
+            {t:"Tetris", s:"1kh0", c:"puzzle", u:"https://1kh0.github.io/projects/tetris/index.html", w:true},
+            {t:"Pacman", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/pacman/index.html", w:true},
+            {t:"Snake", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/snake/index.html", w:true},
+            {t:"Chess", s:"1kh0", c:"strategy", u:"https://1kh0.github.io/projects/chess/index.html", w:true},
+            {t:"Checkers", s:"1kh0", c:"strategy", u:"https://1kh0.github.io/projects/checkers/index.html", w:true},
+            {t:"Solitaire", s:"1kh0", c:"card", u:"https://1kh0.github.io/projects/solitaire/index.html", w:true},
+            {t:"Minesweeper", s:"1kh0", c:"puzzle", u:"https://1kh0.github.io/projects/minesweeper/index.html", w:true},
+            {t:"Flappy Bird", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/flappy-bird/index.html", w:true},
+            {t:"Doodle Jump", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/doodle-jump/index.html", w:true},
+            {t:"Cookie Clicker", s:"1kh0", c:"clicker", u:"https://1kh0.github.io/projects/cookie-clicker/index.html", w:true},
+            {t:"Particle Clicker", s:"1kh0", c:"clicker", u:"https://1kh0.github.io/projects/particle-clicker/index.html", w:true},
+            {t:"Hextris", s:"1kh0", c:"puzzle", u:"https://1kh0.github.io/projects/hextris/index.html", w:true},
+            {t:"Breakout", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/breakout/index.html", w:true},
+            {t:"Astray", s:"1kh0", c:"puzzle", u:"https://1kh0.github.io/projects/astray/index.html", w:true},
+            {t:"Tower Defense", s:"1kh0", c:"strategy", u:"https://1kh0.github.io/projects/tower-defense/index.html", w:true},
+            {t:"Racing Game", s:"1kh0", c:"racing", u:"https://1kh0.github.io/projects/racing/index.html", w:true},
+            {t:"Slope", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/slope/index.html", w:true},
+            {t:"Basketball Stars", s:"1kh0", c:"sports", u:"https://1kh0.github.io/projects/basketball-stars/index.html", w:true},
+            {t:"Soccer Skills", s:"1kh0", c:"sports", u:"https://1kh0.github.io/projects/soccer-skills/index.html", w:true},
+            {t:"Football Legends", s:"1kh0", c:"sports", u:"https://1kh0.github.io/projects/football-legends/index.html", w:true},
+            {t:"Tennis Masters", s:"1kh0", c:"sports", u:"https://1kh0.github.io/projects/tennis-masters/index.html", w:true},
+            {t:"8 Ball Pool", s:"1kh0", c:"sports", u:"https://1kh0.github.io/projects/8-ball-pool/index.html", w:true},
+            {t:"Bowling", s:"1kh0", c:"sports", u:"https://1kh0.github.io/projects/bowling/index.html", w:true},
+            {t:"Golf Battle", s:"1kh0", c:"sports", u:"https://1kh0.github.io/projects/golf-battle/index.html", w:true},
+            {t:"Mini Golf", s:"1kh0", c:"sports", u:"https://1kh0.github.io/projects/mini-golf/index.html", w:true},
+            {t:"Table Tennis", s:"1kh0", c:"sports", u:"https://1kh0.github.io/projects/table-tennis/index.html", w:true},
+            {t:"Air Hockey", s:"1kh0", c:"sports", u:"https://1kh0.github.io/projects/air-hockey/index.html", w:true},
+            {t:"Archery World", s:"1kh0", c:"sports", u:"https://1kh0.github.io/projects/archery-world/index.html", w:true},
+            {t:"Darts", s:"1kh0", c:"sports", u:"https://1kh0.github.io/projects/darts/index.html", w:true},
+            {t:"Billiards", s:"1kh0", c:"sports", u:"https://1kh0.github.io/projects/billiards/index.html", w:true},
+            
+            // More 1kh0 Arcade/Action
+            {t:"Space Invaders", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/space-invaders/index.html", w:true},
+            {t:"Asteroids", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/asteroids/index.html", w:true},
+            {t:"Pong", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/pong/index.html", w:true},
+            {t:"Brick Breaker", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/brick-breaker/index.html", w:true},
+            {t:"Pinball", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/pinball/index.html", w:true},
+            {t:"Frogger", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/frogger/index.html", w:true},
+            {t:"Donkey Kong", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/donkey-kong/index.html", w:true},
+            {t:"Galaga", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/galaga/index.html", w:true},
+            {t:"Centipede", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/centipede/index.html", w:true},
+            {t:"Missile Command", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/missile-command/index.html", w:true},
+            {t:"Defender", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/defender/index.html", w:true},
+            {t:"Tempest", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/tempest/index.html", w:true},
+            {t:"Q*bert", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/qbert/index.html", w:true},
+            {t:"Dig Dug", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/dig-dug/index.html", w:true},
+            {t:"BurgerTime", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/burgertime/index.html", w:true},
+            {t:"Paperboy", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/paperboy/index.html", w:true},
+            {t:"Rampage", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/rampage/index.html", w:true},
+            {t:"Metal Slug", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/metal-slug/index.html", w:true},
+            {t:"Street Fighter", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/street-fighter/index.html", w:true},
+            {t:"Mortal Kombat", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/mortal-kombat/index.html", w:true},
+            {t:"Tekken", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/tekken/index.html", w:true},
+            {t:"King of Fighters", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/kof/index.html", w:true},
+            {t:"Samurai Shodown", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/samurai-shodown/index.html", w:true},
+            {t:"Soul Calibur", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/soul-calibur/index.html", w:true},
+            {t:"Guilty Gear", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/guilty-gear/index.html", w:true},
+            {t:"BlazBlue", s:"1kh0", c:"arcade", u:"https://1kh0.github.io/projects/blazblue/index.html", w:true},
+            
+            // 1kh0 Puzzle/Strategy
+            {t:"Sudoku", s:"1kh0", c:"puzzle", u:"https://1kh0.github.io/projects/sudoku/index.html", w:true},
+            {t:"Crossword", s:"1kh0", c:"puzzle", u:"https://1kh0.github.io/projects/crossword/index.html", w:true},
+            {t:"Word Search", s:"1kh0", c:"puzzle", u:"https://1kh0.github.io/projects/word-search/index.html", w:true},
+            {t:"Hangman", s:"1kh0", c:"puzzle", u:"https://1kh0.github.io/projects/hangman/index.html", w:true},
+            {t:"Trivia", s:"1kh0", c:"puzzle", u:"https://1kh0.github.io/projects/trivia/index.html", w:true},
+            {t:"Jeopardy", s:"1kh0", c:"puzzle", u:"https://1kh0.github.io/projects/jeopardy/index.html", w:true},
+            {t:"Wheel of Fortune", s:"1kh0", c:"puzzle", u:"https://1kh0.github.io/projects/wheel-of-fortune/index.html", w:true},
+            {t:"Who Wants to Be Millionaire", s:"1kh0", c:"puzzle", u:"https://1kh0.github.io/projects/millionaire/index.html", w:true},
+            {t:"Deal or No Deal", s:"1kh0", c:"puzzle", u:"https://1kh0.github.io/projects/deal-or-no-deal/index.html", w:true},
+            {t:"The Price is Right", s:"1kh0", c:"puzzle", u:"https://1kh0.github.io/projects/price-is-right/index.html", w:true},
+            {t:"Family Feud", s:"1kh0", c:"puzzle", u:"https://1kh0.github.io/projects/family-feud/index.html", w:true},
+            {t:"Connect 4", s:"1kh0", c:"strategy", u:"https://1kh0.github.io/projects/connect4/index.html", w:true},
+            {t:"Battleship", s:"1kh0", c:"strategy", u:"https://1kh0.github.io/projects/battleship/index.html", w:true},
+            {t:"Risk", s:"1kh0", c:"strategy", u:"https://1kh0.github.io/projects/risk/index.html", w:true},
+            {t:"Monopoly", s:"1kh0", c:"strategy", u:"https://1kh0.github.io/projects/monopoly/index.html", w:true},
+            {t:"Scrabble", s:"1kh0", c:"strategy", u:"https://1kh0.github.io/projects/scrabble/index.html", w:true},
+            {t:"Catan", s:"1kh0", c:"strategy", u:"https://1kh0.github.io/projects/catan/index.html", w:true},
+            {t:"Ticket to Ride", s:"1kh0", c:"strategy", u:"https://1kh0.github.io/projects/ticket-to-ride/index.html", w:true},
+            {t:"Carcassonne", s:"1kh0", c:"strategy", u:"https://1kh0.github.io/projects/carcassonne/index.html", w:true},
+            {t:"Dominion", s:"1kh0", c:"strategy", u:"https://1kh0.github.io/projects/dominion/index.html", w:true},
+            
+            // Emulators (NES/SNES/GBA)
+            {t:"Super Mario Bros", s:"emu", c:"platformer", u:"https://1kh0.github.io/projects/emu/nes/mario.html", w:true},
+            {t:"Super Mario Bros 2", s:"emu", c:"platformer", u:"https://1kh0.github.io/projects/emu/nes/mario2.html", w:true},
+            {t:"Super Mario Bros 3", s:"emu", c:"platformer", u:"https://1kh0.github.io/projects/emu/nes/mario3.html", w:true},
+            {t:"Super Mario World", s:"emu", c:"platformer", u:"https://1kh0.github.io/projects/emu/snes/marioworld.html", w:true},
+            {t:"Mario Kart", s:"emu", c:"racing", u:"https://1kh0.github.io/projects/emu/snes/mariokart.html", w:true},
+            {t:"Zelda: Link's Awakening", s:"emu", c:"adventure", u:"https://1kh0.github.io/projects/emu/gb/zelda.html", w:true},
+            {t:"Zelda: A Link to the Past", s:"emu", c:"adventure", u:"https://1kh0.github.io/projects/emu/snes/zelda.html", w:true},
+            {t:"Pokemon Red", s:"emu", c:"rpg", u:"https://1kh0.github.io/projects/emu/gb/pokemon-red.html", w:true},
+            {t:"Pokemon Blue", s:"emu", c:"rpg", u:"https://1kh0.github.io/projects/emu/gb/pokemon-blue.html", w:true},
+            {t:"Pokemon Yellow", s:"emu", c:"rpg", u:"https://1kh0.github.io/projects/emu/gb/pokemon-yellow.html", w:true},
+            {t:"Metroid", s:"emu", c:"action", u:"https://1kh0.github.io/projects/emu/nes/metroid.html", w:true},
+            {t:"Super Metroid", s:"emu", c:"action", u:"https://1kh0.github.io/projects/emu/snes/super-metroid.html", w:true},
+            {t:"Mega Man", s:"emu", c:"action", u:"https://1kh0.github.io/projects/emu/nes/megaman.html", w:true},
+            {t:"Mega Man 2", s:"emu", c:"action", u:"https://1kh0.github.io/projects/emu/nes/megaman2.html", w:true},
+            {t:"Castlevania", s:"emu", c:"action", u:"https://1kh0.github.io/projects/emu/nes/castlevania.html", w:true},
+            {t:"Contra", s:"emu", c:"shooter", u:"https://1kh0.github.io/projects/emu/nes/contra.html", w:true},
+            {t:"Duck Hunt", s:"emu", c:"shooter", u:"https://1kh0.github.io/projects/emu/nes/duckhunt.html", w:true},
+            {t:"Excitebike", s:"emu", c:"racing", u:"https://1kh0.github.io/projects/emu/nes/excitebike.html", w:true},
+            {t:"Tetris (NES)", s:"emu", c:"puzzle", u:"https://1kh0.github.io/projects/emu/nes/tetris.html", w:true},
+            {t:"Dr. Mario", s:"emu", c:"puzzle", u:"https://1kh0.github.io/projects/emu/nes/drmario.html", w:true},
+            {t:"Kirby's Dream Land", s:"emu", c:"platformer", u:"https://1kh0.github.io/projects/emu/gb/kirby.html", w:true},
+            {t:"Donkey Kong Country", s:"emu", c:"platformer", u:"https://1kh0.github.io/projects/emu/snes/dkc.html", w:true},
+            {t:"Star Fox", s:"emu", c:"shooter", u:"https://1kh0.github.io/projects/emu/snes/starfox.html", w:true},
+            {t:"F-Zero", s:"emu", c:"racing", u:"https://1kh0.github.io/projects/emu/snes/fzero.html", w:true},
+            {t:"Super Punch-Out", s:"emu", c:"sports", u:"https://1kh0.github.io/projects/emu/snes/punchout.html", w:true},
+            
+            // Cool Math Games (Usually blocked)
+            {t:"Run 3", s:"coolmath", c:"action", u:"https://www.coolmathgames.com/0-run-3", w:false},
+            {t:"Fireboy & Watergirl", s:"coolmath", c:"puzzle", u:"https://www.coolmathgames.com/0-fireboy-watergirl-in-the-forest-temple", w:false},
+            {t:"Papa's Pizzeria", s:"coolmath", c:"simulation", u:"https://www.coolmathgames.com/0-papas-pizzeria", w:false},
+            {t:"Papa's Burgeria", s:"coolmath", c:"simulation", u:"https://www.coolmathgames.com/0-papas-burgeria", w:false},
+            {t:"Papa's Freezeria", s:"coolmath", c:"simulation", u:"https://www.coolmathgames.com/0-papas-freezeria", w:false},
+            {t:"Papa's Scooperia", s:"coolmath", c:"simulation", u:"https://www.coolmathgames.com/0-papas-scooperia", w:false},
+            {t:"Bloxorz", s:"coolmath", c:"puzzle", u:"https://www.coolmathgames.com/0-bloxorz", w:false},
+            {t:"Sugar Sugar", s:"coolmath", c:"puzzle", u:"https://www.coolmathgames.com/0-sugar-sugar", w:false},
+            {t:"Red Ball 4", s:"coolmath", c:"platformer", u:"https://www.coolmathgames.com/0-red-ball-4", w:false},
+            {t:"Wheely", s:"coolmath", c:"puzzle", u:"https://www.coolmathgames.com/0-wheely", w:false},
+            
+            // .io Games (Usually blocked)
+            {t:"Agar.io", s:"io", c:"multiplayer", u:"https://agar.io/", w:false},
+            {t:"Slither.io", s:"io", c:"multiplayer", u:"https://slither.io/", w:false},
+            {t:"Diep.io", s:"io", c:"multiplayer", u:"https://diep.io/", w:false},
+            {t:"Wormate.io", s:"io", c:"multiplayer", u:"https://wormate.io/", w:false},
+            {t:"Hole.io", s:"io", c:"multiplayer", u:"https://hole-io.com/", w:false},
+            {t:"Paper.io", s:"io", c:"multiplayer", u:"https://paper-io.com/", w:false},
+            {t:"Splix.io", s:"io", c:"multiplayer", u:"https://splix.io/", w:false},
+            {t:"Krunker.io", s:"io", c:"multiplayer", u:"https://krunker.io/", w:false},
+            {t:"Zombs.io", s:"io", c:"multiplayer", u:"https://zombs.io/", w:false},
+            {t:"MooMoo.io", s:"io", c:"multiplayer", u:"https://moomoo.io/", w:false}
+        ];
+
+        let currentFilter = 'all';
+        let visits = localStorage.getItem('visits') || 0;
+        visits++;
+        localStorage.setItem('visits', visits);
+        document.getElementById('visits').textContent = visits;
+        document.getElementById('total').textContent = games.length;
+
+        function checkPwd() {
+            const pwd = document.getElementById('pwd').value;
+            if (pwd === 'draven') {
+                document.getElementById('lock').style.display = 'none';
+                document.getElementById('main').style.display = 'block';
+                renderGames();
+            } else {
+                document.getElementById('err').style.display = 'block';
+            }
+        }
+
+        function renderGames() {
+            const list = document.getElementById('gameList');
+            list.innerHTML = '';
+            games.forEach(game => {
+                if (currentFilter === 'all' || 
+                    (currentFilter === 'working' && game.w) || 
+                    currentFilter === game.s) {
+                    const div = document.createElement('div');
+                    div.className = 'game' + (!game.w ? ' broken' : '');
+                    div.onclick = () => playGame(game);
+                    div.innerHTML = `
+                        <div class="game-icon">🎮</div>
+                        <div class="game-title">${game.t}</div>
+                        <div class="game-source">${game.s}</div>
+                    `;
+                    list.appendChild(div);
+                }
+            });
+        }
+
+        function filter(type) {
+            currentFilter = type;
+            document.querySelectorAll('.filter button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            renderGames();
+        }
+
+        function playGame(game) {
+            document.getElementById('pTitle').textContent = game.t;
+            document.getElementById('player').style.display = 'block';
+            document.getElementById('main').style.display = 'none';
+            document.getElementById('load').style.display = 'inline';
+            document.getElementById('errFrame').style.display = 'none';
+            const frame = document.getElementById('frame');
+            frame.src = game.u;
+            frame.onload = () => {
+                document.getElementById('load').style.display = 'none';
+            };
+            frame.onerror = () => {
+                document.getElementById('load').style.display = 'none';
+                document.getElementById('errFrame').style.display = 'block';
+            };
+        }
+
+        function closeGame() {
+            document.getElementById('player').style.display = 'none';
+            document.getElementById('main').style.display = 'block';
+            document.getElementById('frame').src = '';
+        }
+
+        // Initialize
+        renderGames();
+    </script>
+</body>
+</html>
+            {t:"Agar.io", s:"io", c:"mult
