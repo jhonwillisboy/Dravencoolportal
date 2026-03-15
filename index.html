@@ -1,22 +1,48 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Dravencoolportal</title>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gaming Hub</title>
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <h1>Welcome to Dravencoolportal</h1>
-    <div id="games">
-        <div class="game-item"><a href="https://valid-url.com/game1">Game 1</a></div>
-        <div class="game-item"><a href="https://valid-url.com/game2">Game 2</a></div>
-        <div class="game-item"><a href="https://valid-url.com/game3">Game 3</a></div>
-    </div>
-    <button id="filter-button">Filter</button>
-    <script>
-        document.getElementById('filter-button').addEventListener('click', function() {
-            // Implement filter function
-            alert('Filter function executed.');
-        });
-    </script>
+    <header>
+        <h1>Welcome to the Gaming Hub</h1>
+        <nav>
+            <ul>
+                <li><a href="#action-games">Action Games</a></li>
+                <li><a href="#puzzle-games">Puzzle Games</a></li>
+                <li><a href="#adventure-games">Adventure Games</a></li>
+            </ul>
+        </nav>
+    </header>
+    <main>
+        <section id="action-games">
+            <h2>Action Games</h2>
+            <ul>
+                <li><a href="https://working-alternative-url.com/action-game-1">Action Game 1</a></li>
+                <li><a href="https://working-alternative-url.com/action-game-2">Action Game 2</a></li>
+            </ul>
+        </section>
+        <section id="puzzle-games">
+            <h2>Puzzle Games</h2>
+            <ul>
+                <li><a href="https://working-alternative-url.com/puzzle-game-1">Puzzle Game 1</a></li>
+                <li><a href="https://working-alternative-url.com/puzzle-game-2">Puzzle Game 2</a></li>
+            </ul>
+        </section>
+        <section id="adventure-games">
+            <h2>Adventure Games</h2>
+            <ul>
+                <li><a href="https://working-alternative-url.com/adventure-game-1">Adventure Game 1</a></li>
+                <li><a href="https://working-alternative-url.com/adventure-game-2">Adventure Game 2</a></li>
+            </ul>
+        </section>
+    </main>
+    <footer>
+        <p>© 2026 Gaming Hub</p>
+    </footer>
+    <script src="app.js"></script>
 </body>
 </html>
